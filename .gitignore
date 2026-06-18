@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+# data & artifacts
+*.parquet
+*.mat
+*.log
+*.npz
+data/
+artifacts/
+outputs/
+*.png
+# decoded raw cache & feature store (regenerable, large)
+raw_cache/
+**/raw_cache/
+feature_store/
+**/feature_store/
+# OS / scratch
+.DS_Store
+.writetest

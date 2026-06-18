@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "intelliswitch"
+version = "0.1.0"
+description = "Track-irregularity prediction from trackside vibration (PLSR pipeline ported from MATLAB)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "ruptures>=1.1",      # changepoint detection (findchangepts replacement)
+    "pyarrow>=12.0",      # parquet feature store
+    "lightgbm>=4.0",      # alternative model backend
+    "joblib>=1.3",        # model artifact persistence
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "matplotlib>=3.7",
+    "jupyterlab>=4.0",
+    "ipykernel>=6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
