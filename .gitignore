@@ -5,20 +5,23 @@ venv/
 *.egg-info/
 .pytest_cache/
 .ipynb_checkpoints/
-# data & artifacts
+# data & artifacts (regenerable / large)
 *.parquet
 *.mat
 *.log
 *.npz
-data/
-artifacts/
-outputs/
+*.joblib
 *.png
-# decoded raw cache & feature store (regenerable, large)
-raw_cache/
-**/raw_cache/
-feature_store/
-**/feature_store/
+outputs/
+# data lake: ignore contents, keep the folder structure (.gitkeep + README tracked)
+data/**
+!data/
+!data/README.md
+!data/raw/
+!data/intermediate/
+!data/processed/
+!data/models/
+!data/**/.gitkeep
 # OS / scratch
 .DS_Store
 .writetest
