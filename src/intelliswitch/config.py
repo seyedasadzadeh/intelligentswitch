@@ -80,10 +80,10 @@ class Config:
     wheel_band_hz: float = 5.0            # +/- band around wheel freq
     # Train SELECTION (not extraction QC). Applied downstream by
     # pipeline.select_trains, so changing it does NOT invalidate the feature cache.
-    min_speed_kmh: float = 139.0          # keep trains faster than this (None = all)
+    min_speed_kmh: float = 135.0          # keep trains faster than this (None = all)
     # n_groups (train type) still gates extraction; size(sensor.wheel,2)==5 counts
     # wheel-GROUPS (=10 axles), not axles. Set None to extract all train types.
-    n_groups_required: int = 5
+    n_groups_required: tuple = (4, 5)
     accept_pSleeper_max: float = 0.06     # keep wheel if sleeper-freq power below this
     accept_pWheel_max: float = 5000.001   # keep wheel if wheel-freq power below this
 

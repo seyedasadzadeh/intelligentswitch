@@ -183,7 +183,7 @@ def select_trains(df: pd.DataFrame, cfg: Config | None = None) -> pd.DataFrame:
     if cfg.min_speed_kmh is not None and "speed_kmh" in out:
         out = out[out["speed_kmh"] > cfg.min_speed_kmh]
     if cfg.n_groups_required is not None and "n_groups" in out:
-        out = out[out["n_groups"] == cfg.n_groups_required]
+        out = out#[out["n_groups"].isin(cfg.n_groups_required)] this must be fixed, n_groups is majorly nan
     return out.reset_index(drop=True)
 
 
