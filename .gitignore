@@ -18,7 +18,7 @@ data/**
 !data/
 !data/README.md
 !data/raw/
-!data/intermediate/
+!data/interim/
 !data/processed/
 !data/models/
 !data/**/.gitkeep

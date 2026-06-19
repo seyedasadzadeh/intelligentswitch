@@ -22,7 +22,7 @@ features, and **retraining whenever a track-geometry inspection campaign arrives
 Install once: `pip install -e ".[dev]"`. Key building blocks:
 
 - `intelliswitch.paths` — centralized data/model locations (medallion tiers:
-  `data/raw` → `data/interim/raw_cache` → `data/processed/feature_store`, `models/`).
+  `data/raw` → `data/interim/raw_cache` → `data/processed/feature_store`, `data/models`).
   Override with `INTELLISWITCH_DATA_DIR` / `INTELLISWITCH_MODELS_DIR`.
 - `intelliswitch.Config` — all parameters/hyperparameters (freq grid, QC thresholds,
   `cp_decimate`, feature transform `sqrt(PSD)/speed`, LightGBM params, train/test day
