@@ -62,6 +62,7 @@ A recording that fails the quality gate is returned as `rejected` with a reason;
 ```
 src/intelliswitch/
   config.py            # all parameters / hyperparameters
+  paths.py             # data-lake locations (medallion tiers; env-overridable)
   io/
     log_reader.py      # parse raw .log text
     raw_cache.py       # decode-once binary (.npz) cache
@@ -95,12 +96,14 @@ scripts/               # validation flows as plain .py (reference)
   validate_geometry.py
 data/                  # data lake (contents git-ignored; see data/README.md)
   raw/                 # source .log / geometry .csv (or point DATA_ROOT at the drive)
-  intermediate/        # raw_cache/ — decoded .npz (stage 1)
+  interim/             # raw_cache/ — decoded .npz (stage 1)
   processed/           # feature_store/ (parquet) + training tables
   models/              # trained model artifacts (.joblib)
 ```
 
-Each notebook resolves paths at the top: `DATA_ROOT` points at the source `.log`/`.csv`
-(large — kept on the external drive or symlinked into `data/raw`), while all generated
-artifacts go under the `data/` lake (`RAW_CACHE`, `STORE`, `MODELS`).
+Lake locations come from `intelliswitch.paths` (`paths.RAW_CACHE`, `paths.FEATURE_STORE`,
+`paths.MODELS`), so notebooks and jobs never hard-code them and they resolve regardless of
+working dir; override the roots with `INTELLISWITCH_DATA_DIR` / `INTELLISWITCH_MODELS_DIR`.
+Each notebook still sets `DATA_ROOT` for the large source `.log`/`.csv` (kept on the
+external drive or symlinked into `data/raw`).
 Run `pip install -e .` once so `import intelliswitch` works.
