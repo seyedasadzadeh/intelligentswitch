@@ -124,15 +124,11 @@ class Config:
         subsample=0.8, colsample_bytree=0.5, min_child_samples=20,
         random_state=0, n_jobs=-1, verbosity=-1,
     ))
-    # train/test split by day ranges (inclusive), from _02 lines 123/169-176.
-    train_day_ranges: tuple = (
-        (-864, -824), (-823, -700), (-669, -460),
-        (-414, -336), (-314, -261), (-219, -181),
-    )
-    test_day_ranges: tuple = (
-        (-900, -865), (-699, -670), (-459, -430), (-429, -415),
-        (-335, -315), (-260, -220), (-180, -150),
-    )
+    # Train/test split: a single temporal cutoff date. Recordings BEFORE the
+    # cutoff train the model; recordings ON/AFTER it are the test set. Every test
+    # observation counts individually (no per-period averaging). Default aligns
+    # with the Phase-2 simulation start t0.
+    cutoff_date: str = "2018-06-01"
 
     reference_date: str = "2019-01-01"    # 'days' are negative days before this
 
@@ -168,3 +164,12 @@ class Config:
         """Integer/float Hz grid the per-group PSD is interpolated onto."""
         n = int(round((self.freq_max_hz - self.freq_min_hz) / self.freq_step_hz)) + 1
         return self.freq_min_hz + self.freq_step_hz * np.arange(n)
+
+    @property
+    def cutoff_days(self) -> float:
+        """`cutoff_date` expressed in the same 'days before reference_date' units
+        as the feature `days` column. Train = days < cutoff_days; test = days >=."""
+        from datetime import date
+        ref = date.fromisoformat(self.reference_date)
+        cut = date.fromisoformat(self.cutoff_date)
+        return -float((ref - cut).days)

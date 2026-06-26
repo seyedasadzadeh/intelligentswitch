@@ -93,9 +93,9 @@ def extract_features(source: str | Path | RawRecord,
     if geom.n_wheels != 2 * geom.n_groups:
         return FeatureResult(empty, geom, days, False,
                              f"n_wheels({geom.n_wheels}) != 2*n_groups({geom.n_groups})")
-    if cfg.n_groups_required and geom.n_groups != cfg.n_groups_required:
+    if cfg.n_groups_required and geom.n_groups not in cfg.n_groups_required:
         return FeatureResult(empty, geom, days, False,
-                             f"n_groups {geom.n_groups} != required {cfg.n_groups_required}")
+                             f"n_groups {geom.n_groups} not in required {cfg.n_groups_required}")
 
     # band-pass filter each sensor channel
     xf = {name: _bandpass(sig, cfg) for name, sig in channels.items()}

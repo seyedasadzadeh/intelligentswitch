@@ -38,15 +38,18 @@ def build_xy(df: pd.DataFrame, cfg: Config, fcols: list[str] | None = None):
     return build_X(df, cfg, fcols), df["y"].to_numpy(float)
 
 
-def _mask_by_ranges(days: np.ndarray, ranges) -> np.ndarray:
-    m = np.zeros(days.shape, dtype=bool)
-    for lo, hi in ranges:
-        m |= (days >= lo) & (days <= hi)
-    return m
-
-
 def _clean(df: pd.DataFrame, fcols: list[str]) -> pd.DataFrame:
     return df.dropna(subset=fcols + ["y", "days", "speed_kmh"])
+
+
+def train_mask(df: pd.DataFrame, cfg: Config) -> np.ndarray:
+    """Recordings BEFORE the cutoff date (more-negative days)."""
+    return df["days"].to_numpy() < cfg.cutoff_days
+
+
+def test_mask(df: pd.DataFrame, cfg: Config) -> np.ndarray:
+    """Recordings ON/AFTER the cutoff date."""
+    return df["days"].to_numpy() >= cfg.cutoff_days
 
 
 # ----------------------------------------------------------------- artifact
@@ -82,7 +85,7 @@ def train(df: pd.DataFrame, cfg: Config | None = None,
     kind = kind or cfg.model_kind
     fcols = feature_columns(df)
     d = _clean(df, fcols)
-    tr = d[_mask_by_ranges(d["days"].to_numpy(), cfg.train_day_ranges)]
+    tr = d[train_mask(d, cfg)]
     if len(tr) < 3:
         raise ValueError(f"too few training rows ({len(tr)}) for '{label or kind}'")
     X, y = build_xy(tr, cfg, fcols)
@@ -100,29 +103,31 @@ def fit_pooled(df, cfg=None, kind=None) -> QualityModel:
 
 
 # ----------------------------------------------------------------- evaluation
-def evaluate_testpoints(model: QualityModel, df: pd.DataFrame,
-                        cfg: Config | None = None) -> dict:
-    """Per-test-window mean prediction vs. mean reference, MAPE and correlation."""
+def evaluate_test(model: QualityModel, df: pd.DataFrame,
+                  cfg: Config | None = None) -> dict:
+    """Row-level metrics over EVERY test observation (days >= cutoff).
+
+    No per-period averaging — each recording's prediction is scored individually.
+    Returns the per-row arrays too (for plots over time).
+    """
     cfg = cfg or model.cfg
     d = _clean(df, model.feature_cols)
-    days = d["days"].to_numpy()
-    preds, refs, mids = [], [], []
-    for lo, hi in cfg.test_day_ranges:
-        sel = (days >= lo) & (days <= hi)
-        if sel.sum() == 0:
-            continue
-        sub = d[sel]
-        preds.append(float(model.predict(sub).mean()))
-        refs.append(float(sub["y"].mean()))
-        mids.append((lo + hi) / 2.0)
-    pred, ref = np.array(preds), np.array(refs)
-    if pred.size == 0:
-        return dict(n_testpoints=0, mape=np.nan, corr=np.nan,
-                    pred=pred, ref=ref, mid_days=np.array(mids))
-    mape = 100.0 * np.mean(np.abs(pred - ref) / np.abs(ref))
-    corr = float(np.corrcoef(pred, ref)[0, 1]) if pred.size > 1 else np.nan
-    return dict(n_testpoints=pred.size, mape=float(mape), corr=corr,
-                pred=pred, ref=ref, mid_days=np.array(mids))
+    te = d[test_mask(d, cfg)]
+    if len(te) == 0:
+        return dict(n_test=0, mae=np.nan, rmse=np.nan, r2=np.nan, corr=np.nan,
+                    pred=np.array([]), ref=np.array([]), days=np.array([]))
+    pred = model.predict(te)
+    ref = te["y"].to_numpy(float)
+    err = pred - ref
+    ss_tot = float(((ref - ref.mean()) ** 2).sum()) or 1.0
+    return dict(
+        n_test=int(len(te)),
+        mae=float(np.mean(np.abs(err))),
+        rmse=float(np.sqrt(np.mean(err ** 2))),
+        r2=float(1.0 - float((err ** 2).sum()) / ss_tot),
+        corr=float(np.corrcoef(pred, ref)[0, 1]) if len(te) > 1 else np.nan,
+        pred=pred, ref=ref, days=te["days"].to_numpy(float),
+    )
 
 
 def evaluate(model: QualityModel, df: pd.DataFrame, cfg: Config | None = None) -> dict:
@@ -132,8 +137,8 @@ def evaluate(model: QualityModel, df: pd.DataFrame, cfg: Config | None = None) -
     for li, name in enumerate(cfg.sensor_names):
         sub = df[df["location_idx"] == li]
         if not sub.empty:
-            per[name] = evaluate_testpoints(model, sub, cfg)
-    return dict(overall=evaluate_testpoints(model, df, cfg), per_location=per)
+            per[name] = evaluate_test(model, sub, cfg)
+    return dict(overall=evaluate_test(model, df, cfg), per_location=per)
 
 
 def leave_one_location_out(df: pd.DataFrame, cfg: Config | None = None,
@@ -150,7 +155,7 @@ def leave_one_location_out(df: pd.DataFrame, cfg: Config | None = None,
         except ValueError as e:  # noqa: BLE001
             out[name] = {"error": str(e)}
             continue
-        out[name] = evaluate_testpoints(m, te, cfg)
+        out[name] = evaluate_test(m, te, cfg)
     return out
 
 
@@ -168,5 +173,5 @@ def fit_per_location(df: pd.DataFrame, cfg: Config | None = None,
         except ValueError as e:  # noqa: BLE001
             out[name] = {"model": None, "eval": None, "error": str(e)}
             continue
-        out[name] = {"model": m, "eval": evaluate_testpoints(m, loc, cfg)}
+        out[name] = {"model": m, "eval": evaluate_test(m, loc, cfg)}
     return out
