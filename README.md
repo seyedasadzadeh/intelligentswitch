@@ -1,4 +1,4 @@
-# Intelliswitch — track-irregularity prediction (Python refactor)
+# Intelligent switch — track-irregularity prediction inside switches and crossing area
 
 Python port of the MATLAB PLSR pipeline that predicts a **track quality index**
 (fractal value or std of longitudinal level) from **trackside vibration recordings**.
